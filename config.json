@@ -16,7 +16,15 @@
             },
             {
                 "Name": "ControllerURL",
-                "Value": "http://controller-2060nosshco-o3wdq4ip.appd-cx.com:8090"
+                "Value": "https://customer.saas.appdynamics.com"
+            },
+            {
+                "Name": "APIClientID", 
+                "Value": "clientid@account"   
+            },
+            {
+                "Name": "APIClientSecret", 
+                "Value": "apiClientSecret"   
             },
             {
                 "Name": "OAuthToken", 
@@ -24,7 +32,7 @@
             },
             {
                 "Name": "ApplicationList", 
-                "Value": "app1,app3,app3" 
+                "Value": "app1,app3" 
             }
         ]
 }
