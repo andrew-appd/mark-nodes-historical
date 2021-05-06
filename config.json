@@ -19,20 +19,20 @@
                 "Value": "https://customer.saas.appdynamics.com"
             },
             {
-                "Name": "APIClientID", 
-                "Value": "clientid@account"   
+                "Name": "APIClientID",
+                "Value": "api_client_id@account"
             },
             {
-                "Name": "APIClientSecret", 
-                "Value": "apiClientSecret"   
+                "Name": "APIClientSecret",
+                "Value": "apiClientSecret"
             },
             {
-                "Name": "OAuthToken", 
-                "Value": ""   
+                "Name": "OAuthToken",
+                "Value": "token_only_needed_if_not_using_api_client_and_secret"
             },
             {
-                "Name": "ApplicationList", 
-                "Value": "app1,app3" 
+                "Name": "ApplicationList",
+                "Value": "app1,app3"
             }
         ]
 }

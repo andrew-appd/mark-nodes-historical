@@ -49,6 +49,7 @@ $confFileContent = (Get-Content $confFile -Raw) | ConvertFrom-Json
 # Give preferenece to env varible 
 
 # APPDYNAMICS_CONTROLLER_URL 
+# APPDYNAMICS_OAUTH_TOKEN
 # APPDYNAMICS_API_CLIENT_ID
 # APPDYNAMICS_API_CLIENT_SECRET
 # APPDYNAMICS_NODE_AVAILABILITY_THRESHOLD
@@ -57,6 +58,7 @@ $confFileContent = (Get-Content $confFile -Raw) | ConvertFrom-Json
 # APPDYNAMICS_EXECUTE_ONCE_OR_CONTINUOUS
 
 $controllerURL = ${env:APPDYNAMICS_CONTROLLER_URL}
+$OAuthToken = ${env:APPDYNAMICS_OAUTH_TOKEN}
 $APIClientID = ${env:APPDYNAMICS_API_CLIENT_ID}
 $APIClientSecret = ${env:APPDYNAMICS_API_CLIENT_SECRET}
 $apps = ${env:APPDYNAMICS_TARGET_APPLICATIONS}
@@ -67,6 +69,11 @@ $JobType = ${env:APPDYNAMICS_EXECUTE_ONCE_OR_CONTINUOUS}
 if ([string]::IsNullOrEmpty($controllerURL)) {
     #default to config.file 
     $controllerURL = $confFileContent.ConfigItems | Where-Object { $_.Name -eq "ControllerURL" } | Select-Object -ExpandProperty Value
+}
+
+if ([string]::IsNullOrEmpty($OAuthToken)) {
+    #default to config.file 
+    $OAuthToken = $confFileContent.ConfigItems | Where-Object { $_.Name -eq "OAuthToken" } | Select-Object -ExpandProperty Value
 }
 
 if ([string]::IsNullOrEmpty($APIClientID)) {
@@ -103,13 +110,14 @@ if ([string]::IsNullOrEmpty($JobType)) {
 }
 
 
-if ([string]::IsNullOrEmpty($controllerURL) -or [string]::IsNullOrEmpty($APIClientID) -or [string]::IsNullOrEmpty($APIClientSecret) -or [string]::IsNullOrEmpty($apps) -or [string]::IsNullOrEmpty($ThresholdInMintues) -or [string]::IsNullOrEmpty($ExecutionFrequencyInMinutes)) {
+if ([string]::IsNullOrEmpty($controllerURL) -or [string]::IsNullOrEmpty($apps) -or [string]::IsNullOrEmpty($ThresholdInMintues) -or [string]::IsNullOrEmpty($ExecutionFrequencyInMinutes)) {
   
     Write-Host "One or more required parameter value is/are missing" 
 
     Write-Host " Controller URL: $controllerURL "
-    Write-Host " APIClinetID: $APIClientID "
-    Write-Host " APIClinetSecret: $APIClientSecret "
+    Write-Host " OAuthToken: $OAuthToken "
+    Write-Host " APIClientID: $APIClientID "
+    Write-Host " APIClientSecret: $APIClientSecret "
     Write-Host " Target Applications : $apps"
     Write-Host " ThresholdInMintues : $ThresholdInMintues"
     Write-Host " ExecutionFrequencyInMinutes : $ExecutionFrequencyInMinutes"
@@ -133,42 +141,46 @@ if ($SleepTime -gt 2147483) {
     break
 }
 
-# Build OAuth Call
-$contentType = "application/vnd.appd.cntrl+protobuf;v=1"
-$oauthEndPoint = "$controllerURL/controller/api/oauth/access_token"
-$body = @{
-	grant_type="client_credentials"
-	client_id="$APIClientID"
-	client_secret="$APIClientSecret"
-}
+
 
 $stopWatch = New-Object -TypeName System.Diagnostics.Stopwatch
 
 While ($true) {
 
-	if ($stopWatch.isRunning -eq $false) {
-		Write-Host "Getting Bearer token from OAuth endpoint"
-		# Authenticate with ClientID and ClientSecret to get OAuth Token
-		$response = Invoke-RestMethod -Uri $oauthEndPoint -Method POST -ContentType $contentType -Body $body
-		$OAuthToken = $response.access_token
-		$OAuthTokenExpiry = New-TimeSpan -Seconds $response.expires_in
-		$stopWatch.Start()
-		Write-Host "Got Bearer token. Expires in" $OAuthTokenExpiry
-	}
-	elseif ($stopWatch.Elapsed -ge $OAuthTokenExpiry) {
-		Write-Host "Bearer token expired. Getting new Bearer token from OAuth endpoint"
-		$response = Invoke-RestMethod -Uri $oauthEndPoint -Method POST -ContentType $contentType -Body $body
-		$OAuthToken = $response.access_token
-		$OAuthTokenExpiry = New-TimeSpan -Seconds $response.expires_in
-		$stopWatch.Restart()
-		Write-Host "Got Bearer token. Expires in" $OAuthTokenExpiry
+	if ($APIClientID) {
+		# Build OAuth Call
+		$contentType = "application/vnd.appd.cntrl+protobuf;v=1"
+		$oauthEndPoint = "$controllerURL/controller/api/oauth/access_token"
+		$body = @{
+			grant_type="client_credentials"
+			client_id="$APIClientID"
+			client_secret="$APIClientSecret"
+		}
+		Write-Host $APIClientID $APIClientSecret
+		if ($stopWatch.isRunning -eq $false) {
+			Write-Host "Getting Bearer token from OAuth endpoint"
+			# Authenticate with ClientID and ClientSecret to get OAuth Token
+			$response = Invoke-RestMethod -Uri $oauthEndPoint -Method POST -ContentType $contentType -Body $body
+			$OAuthToken = $response.access_token
+			$OAuthTokenExpiry = New-TimeSpan -Seconds $response.expires_in
+			$stopWatch.Start()
+			Write-Host "Got Bearer token. Expires in" $OAuthTokenExpiry
+		}
+		elseif ($stopWatch.Elapsed -ge $OAuthTokenExpiry) {
+			Write-Host "Bearer token expired. Getting new Bearer token from OAuth endpoint"
+			# Authenticate with ClientID and ClientSecret to get OAuth Token
+			$response = Invoke-RestMethod -Uri $oauthEndPoint -Method POST -ContentType $contentType -Body $body
+			$OAuthToken = $response.access_token
+			$OAuthTokenExpiry = New-TimeSpan -Seconds $response.expires_in
+			$stopWatch.Restart()
+			Write-Host "Got Bearer token. Expires in" $OAuthTokenExpiry
+		}
 	}
 
 $JWTToken = "Bearer $OAuthToken"
 $historicalEndPoint = "$controllerURL/controller/rest/mark-nodes-historical?application-component-node-ids"
 $headers = @{Authorization = $JWTToken }
 $endpoint_get_applications = "$controllerURL/controller/rest/applications?output=json"
-
 
     ForEach ($application in $apps.Split(",")) {
         $msg = "Proccessing $application application `n"
