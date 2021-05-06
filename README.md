@@ -47,7 +47,7 @@ The script was written and tested in Powershell Core 6.0  - which means it can r
   | ControllerURL  | APPDYNAMICS_CONTROLLER_URL  | Your AppDynamics controller URL - including http/s bit |
   | APIClientID  | APPDYNAMICS_API_CLIENT_ID  | Your API Client ID created in the Controller under Administration -> API Clients -> Client Name. If this is set to a non null value then the OAuthToken will be ignored. |
   | APIClientSecret  | APPDYNAMICS_API_CLIENT_SECRET  | Your API Client Secret created in the Controller under Administration -> API Clients -> Client Secret |
-  | OAuthToken  | APPDYNAMICS_OAUTH_TOKEN  | Create an API Client that has an admin privilege on the target application(s). [READ MORE](https://docs.appdynamics.com/display/latest/API+Clients) |
+  | OAuthToken  | APPDYNAMICS_OAUTH_TOKEN  | Left for backwards compatibility. Recommend using API Client and Secret instead. Auth Token created via the Controller Admin UI. Requires administrator role. [READ MORE](https://docs.appdynamics.com/display/latest/API+Clients) |
   | ApplicationList | APPDYNAMICS_TARGET_APPLICATIONS | Define the list of target applications, comma separated: app1,app2,app3  |
   | ExecuteOnceORContinuous | APPDYNAMICS_EXECUTE_ONCE_OR_CONTINUOUS| Defaults to `once`. Set this to `continuous` if you need this script to run continuously in the background. When to set to `once`, it the overrides `ExecutionFrequencyInMinutes` setting  |
 
